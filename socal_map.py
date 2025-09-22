@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Generate clean Southern California map with proper colors and aligned labels."""
+"""Generate clean Southern California map with highway legend and color coding."""
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+from matplotlib.patches import Rectangle
 
 # Configuration
 MAP_WIDTH_INCHES = 24
@@ -21,7 +22,14 @@ COUNTY_COLORS = {
 }
 COUNTY_EDGE_COLOR = "#CCCCCC"
 COUNTY_EDGE_WIDTH = 1.0
-HIGHWAY_COLOR = "#FF6600"  # Orange for highways
+
+# Highway color coding by type
+HIGHWAY_COLORS = {
+    'I': '#FF0000',  # Red for Interstate
+    'U': '#0066CC',  # Blue for US routes
+    'S': '#FF6600',  # Orange for State routes
+    'C': '#666666'   # Gray for County routes
+}
 HIGHWAY_WIDTH = 2.0
 MASJID_COLOR = "#228B22"  # Green
 MASJID_SIZE = 400
@@ -37,8 +45,49 @@ MASJID = {
     "address": "1027 E Philadelphia St, Ontario, CA 91761"
 }
 
+def add_highway_legend(ax, bounds):
+    """Add highway legend with color coding."""
+    legend_x = bounds[2] - 1.5  # Right side of map
+    legend_y = bounds[3] - 0.5  # Top of map
+    
+    # Legend background
+    legend_width = 1.2
+    legend_height = 1.0
+    
+    # Add white background for legend
+    legend_bg = Rectangle(
+        (legend_x - 0.1, legend_y - legend_height - 0.1),
+        legend_width + 0.2, legend_height + 0.2,
+        facecolor='white', edgecolor='black', alpha=0.9, linewidth=1
+    )
+    ax.add_patch(legend_bg)
+    
+    # Legend title
+    ax.text(legend_x + legend_width/2, legend_y - 0.1, 'HIGHWAYS', 
+            ha='center', va='top', fontsize=12, weight='bold')
+    
+    # Legend items
+    legend_items = [
+        ('I', 'Interstate', HIGHWAY_COLORS['I']),
+        ('U', 'US Route', HIGHWAY_COLORS['U']),
+        ('S', 'State Route', HIGHWAY_COLORS['S']),
+        ('C', 'County Route', HIGHWAY_COLORS['C'])
+    ]
+    
+    y_offset = 0.25
+    for i, (code, name, color) in enumerate(legend_items):
+        y_pos = legend_y - y_offset - (i * 0.15)
+        
+        # Draw line sample
+        ax.plot([legend_x, legend_x + 0.3], [y_pos, y_pos], 
+                color=color, linewidth=3, alpha=0.8)
+        
+        # Add text
+        ax.text(legend_x + 0.4, y_pos, f'{code} - {name}', 
+                ha='left', va='center', fontsize=9, weight='bold')
+
 def main():
-    print("🗺️  Southern California Map Generator")
+    print("🗺️  Southern California Map with Highway Legend")
     print("=" * 50)
     
     # Delete existing files
@@ -66,15 +115,18 @@ def main():
         bounds = target_counties.total_bounds
         buffer = 0.05
         
-        # Filter highways to region - keep ALL highways, don't remove duplicates
+        # Filter highways to region
         regional_highways = highways.cx[
             bounds[0]-buffer:bounds[2]+buffer, 
             bounds[1]-buffer:bounds[3]+buffer
         ].copy()
         
-        # Filter for major highways only for labeling
+        # Add color column based on route type
+        regional_highways['color'] = regional_highways['RTTYP'].map(HIGHWAY_COLORS).fillna(HIGHWAY_COLORS['C'])
+        
+        # Filter for major highways for labeling
         major_highways_for_labels = regional_highways[
-            (regional_highways['RTTYP'].isin(['I', 'U'])) &  # Interstate and US routes only
+            (regional_highways['RTTYP'].isin(['I', 'U'])) &
             (regional_highways['FULLNAME'].notna()) &
             (regional_highways['FULLNAME'].str.len() > 0)
         ].copy()
@@ -95,7 +147,7 @@ def main():
         if regional_highways.crs != 'EPSG:4326':
             regional_highways = regional_highways.to_crs('EPSG:4326')
         
-        print("Rendering map...")
+        print("Rendering map with legend...")
         
         # Create figure
         fig, ax = plt.subplots(figsize=(MAP_WIDTH_INCHES, MAP_HEIGHT_INCHES), dpi=DPI)
@@ -115,7 +167,6 @@ def main():
             county_name = row['NAME']
             color = COUNTY_COLORS.get(county_name, "#F0F0F0")
             
-            # Plot individual county
             gpd.GeoDataFrame([row]).plot(
                 ax=ax,
                 color=color,
@@ -123,16 +174,19 @@ def main():
                 linewidth=COUNTY_EDGE_WIDTH,
                 alpha=0.8
             )
-            print(f"    Rendered {county_name} in {color}")
         
-        # Render ALL highways (no filtering)
-        print("  🛣️  Rendering all highways...")
-        regional_highways.plot(
-            ax=ax,
-            color=HIGHWAY_COLOR,
-            linewidth=HIGHWAY_WIDTH,
-            alpha=0.7
-        )
+        # Render highways by type with color coding
+        print("  🛣️  Rendering color-coded highways...")
+        for highway_type in ['I', 'U', 'S', 'C']:
+            type_highways = regional_highways[regional_highways['RTTYP'] == highway_type]
+            if not type_highways.empty:
+                type_highways.plot(
+                    ax=ax,
+                    color=HIGHWAY_COLORS.get(highway_type, HIGHWAY_COLORS['C']),
+                    linewidth=HIGHWAY_WIDTH,
+                    alpha=0.8
+                )
+                print(f"    Rendered {len(type_highways)} {highway_type} routes")
         
         # Add county labels
         print("  🏷️  Adding county labels...")
@@ -149,31 +203,28 @@ def main():
                 bbox=dict(boxstyle='round,pad=0.6', facecolor='white', alpha=0.9, edgecolor='gray')
             )
         
-        # Add highway labels aligned with lines
+        # Add selective highway labels
         print("  🛣️  Adding highway labels...")
         labeled_highways = set()
         
         for idx, row in major_highways_for_labels.iterrows():
             highway_name = row['FULLNAME']
             
-            # Skip if already labeled
             if highway_name in labeled_highways:
                 continue
                 
             if hasattr(row.geometry, 'coords'):
                 coords = list(row.geometry.coords)
                 if len(coords) >= 2:
-                    # Get midpoint
                     mid_idx = len(coords) // 2
                     mid_point = coords[mid_idx]
                     
-                    # Calculate angle of highway line for text rotation
+                    # Calculate angle
                     if mid_idx > 0:
                         p1 = coords[mid_idx - 1]
                         p2 = coords[mid_idx]
                         angle = np.degrees(np.arctan2(p2[1] - p1[1], p2[0] - p1[0]))
                         
-                        # Keep text readable (don't flip upside down)
                         if angle > 90:
                             angle -= 180
                         elif angle < -90:
@@ -181,7 +232,9 @@ def main():
                     else:
                         angle = 0
                     
-                    # Add label aligned with highway
+                    # Get color for label border
+                    route_color = HIGHWAY_COLORS.get(row['RTTYP'], HIGHWAY_COLORS['C'])
+                    
                     ax.annotate(
                         highway_name,
                         xy=mid_point,
@@ -189,16 +242,19 @@ def main():
                         va='center',
                         fontsize=10,
                         weight='bold',
-                        color='#CC4400',
+                        color='white',
                         rotation=angle,
-                        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='orange')
+                        bbox=dict(boxstyle='round,pad=0.3', facecolor=route_color, alpha=0.9, edgecolor='white')
                     )
                     
                     labeled_highways.add(highway_name)
                     
-                    # Limit number of labels to avoid clutter
                     if len(labeled_highways) >= 12:
                         break
+        
+        # Add highway legend
+        print("  📋 Adding highway legend...")
+        add_highway_legend(ax, bounds)
         
         # Render masjid
         print("  🕌 Rendering masjid...")
@@ -228,7 +284,7 @@ def main():
         
         # Add title
         ax.set_title(
-            "Southern California Counties\nLos Angeles • Orange • Riverside • San Bernardino",
+            "Southern California Counties & Highway Network\nLos Angeles • Orange • Riverside • San Bernardino",
             fontsize=24,
             fontweight='bold',
             color='#212121',
@@ -269,7 +325,7 @@ def main():
         
         plt.close(fig)
         
-        print("\n✅ Southern California map generated successfully!")
+        print("\n✅ Southern California map with highway legend generated!")
         
     except Exception as e:
         print(f"\n❌ Error: {e}")
