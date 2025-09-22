@@ -40,6 +40,9 @@ output/*.png
 output/*.pdf
 output/*.svg
 
+# Large shapefiles (downloaded via script)
+data/shapefiles/
+
 # Testing
 .pytest_cache/
 .coverage

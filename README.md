@@ -26,9 +26,20 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Download TIGER/Line shapefiles (required)
+python download_data.py
+
 # Generate the map
 python socal_map.py
 ```
+
+## 📥 Data Requirements
+
+This project uses US Census TIGER/Line 2023 shapefiles:
+- **Counties**: `tl_2023_us_county.shp` (~125 MB)
+- **Primary Roads**: `tl_2023_us_primaryroads.shp` (~55 MB)
+
+**Important**: Run `python download_data.py` before generating maps. This downloads the required shapefiles from the US Census Bureau.
 
 ## 📊 Output
 
