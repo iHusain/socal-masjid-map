@@ -30,6 +30,14 @@ HIGHWAY_COLORS = {
     'S': '#FF6600',  # Orange for State routes
     'C': '#666666'   # Gray for County routes
 }
+
+# Unique colors for individual highways
+HIGHWAY_UNIQUE_COLORS = [
+    '#FF0000', '#0066CC', '#FF6600', '#228B22', '#800080', '#FF1493',
+    '#00CED1', '#FFD700', '#DC143C', '#32CD32', '#4169E1', '#FF4500',
+    '#9932CC', '#00FF7F', '#FF69B4', '#1E90FF', '#FFA500', '#8A2BE2',
+    '#00FA9A', '#FF6347', '#4682B4', '#D2691E', '#6495ED', '#FF7F50'
+]
 HIGHWAY_WIDTH = 2.0
 MASJID_COLOR = "#228B22"  # Green
 MASJID_SIZE = 400
@@ -45,8 +53,8 @@ MASJID = {
     "address": "1027 E Philadelphia St, Ontario, CA 91761"
 }
 
-def add_highway_legend(ax, bounds, labeled_highways):
-    """Add highway legend with actual highway names."""
+def add_highway_legend(ax, bounds, labeled_highways, highway_color_map):
+    """Add highway legend with actual highway names and unique colors."""
     legend_x = bounds[2] - 1.8  # Right side of map
     legend_y = bounds[3] - 0.3  # Top of map
 
@@ -77,13 +85,13 @@ def add_highway_legend(ax, bounds, labeled_highways):
         weight="bold",
     )
 
-    # Add actual highway names
+    # Add actual highway names with unique colors
     y_offset = 0.3
-    for i, (highway_name, route_type) in enumerate(labeled_highways[:12]):  # Limit to 12
+    for i, highway_name in enumerate(labeled_highways[:12]):  # Limit to 12
         y_pos = legend_y - y_offset - (i * 0.12)
 
-        # Get color based on route type
-        color = HIGHWAY_COLORS.get(route_type, HIGHWAY_COLORS["C"])
+        # Get unique color for this highway
+        color = highway_color_map.get(highway_name, '#666666')
 
         # Draw line sample
         ax.plot(
@@ -190,17 +198,41 @@ def main():
                 alpha=0.8
             )
         
-        # Render highways by type with color coding
-        print("  🛣️  Rendering color-coded highways...")
-        for highway_type in ['I', 'U', 'S', 'C']:
-            type_highways = regional_highways[regional_highways['RTTYP'] == highway_type]
-            if not type_highways.empty:
-                type_highways.plot(
+        # Render highways with unique colors for each highway
+        print("  🛣️  Rendering highways with unique colors...")
+        highway_color_map = {}
+        color_index = 0
+        
+        # Assign unique colors to each highway name
+        unique_highways = regional_highways['FULLNAME'].dropna().unique()
+        for highway_name in unique_highways:
+            if highway_name and highway_name.strip():
+                highway_color_map[highway_name] = HIGHWAY_UNIQUE_COLORS[color_index % len(HIGHWAY_UNIQUE_COLORS)]
+                color_index += 1
+        
+        # Render highways grouped by name with unique colors
+        for highway_name, color in highway_color_map.items():
+            highway_segments = regional_highways[regional_highways['FULLNAME'] == highway_name]
+            if not highway_segments.empty:
+                highway_segments.plot(
                     ax=ax,
-                    color=HIGHWAY_COLORS.get(highway_type, HIGHWAY_COLORS['C']),
+                    color=color,
                     linewidth=HIGHWAY_WIDTH,
                     alpha=0.8
                 )
+        
+        # Render highways without names in gray
+        unnamed_highways = regional_highways[
+            (regional_highways['FULLNAME'].isna()) | 
+            (regional_highways['FULLNAME'].str.strip() == '')
+        ]
+        if not unnamed_highways.empty:
+            unnamed_highways.plot(
+                ax=ax,
+                color='#CCCCCC',
+                linewidth=HIGHWAY_WIDTH * 0.7,
+                alpha=0.5
+            )
         
         # Add county labels
         print("  🏷️  Adding county labels...")
@@ -247,8 +279,8 @@ def main():
                     else:
                         angle = 0
                     
-                    # Get color for label border
-                    route_color = HIGHWAY_COLORS.get(row['RTTYP'], HIGHWAY_COLORS['C'])
+                    # Get unique color for this highway
+                    route_color = highway_color_map.get(highway_name, '#666666')
                     
                     ax.annotate(
                         highway_name,
@@ -263,15 +295,15 @@ def main():
                     )
                     
                     # Add to legend list
-                    labeled_highways.append((highway_name, row['RTTYP']))
+                    labeled_highways.append(highway_name)
                     labeled_names.add(highway_name)
                     
                     if len(labeled_highways) >= 12:
                         break
         
-        # Add highway legend with actual names
+        # Add highway legend with actual names and unique colors
         print("  📋 Adding highway names legend...")
-        add_highway_legend(ax, bounds, labeled_highways)
+        add_highway_legend(ax, bounds, labeled_highways, highway_color_map)
         
         # Render masjid
         print("  🕌 Rendering masjid...")
