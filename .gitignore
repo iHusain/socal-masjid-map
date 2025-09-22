@@ -48,3 +48,7 @@ htmlcov/
 # Temporary files
 *.tmp
 *.log
+
+# GitHub setup files
+PUSH_TO_GITHUB.txt
+GITHUB_SETUP.md

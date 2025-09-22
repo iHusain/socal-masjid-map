@@ -1,140 +1,94 @@
 # Southern California Counties & Masjid Map Generator
 
-A Python application for generating high-resolution maps of Southern California counties with highway networks and masjid location, featuring Google Maps-inspired clean design and aligned highway labeling.
+A Python application for generating high-resolution maps of Southern California counties with highway networks and masjid location, featuring unique highway colors and professional legend for easy identification.
 
-## 🗺️ Current Functionality
+![Sample Map Output](assets/sample_map.png)
 
-This project generates professional-quality maps showing:
+## 🗺️ Features
+
 - **4 Southern California Counties**: Los Angeles (peach), Orange (coral), Riverside (yellow), San Bernardino (salmon)
-- **Complete Highway Network**: 532 highway segments with continuous orange lines
-- **Aligned Highway Labels**: Text rotated to match highway direction for easy identification
+- **Unique Highway Colors**: 24 distinct colors for easy highway identification
+- **Professional Legend**: Highway names with matching color samples
 - **Single Masjid Location**: Orange County Masjid at 1027 E Philadelphia St, Ontario, CA 91761
-- **Clean Design**: Google Maps-inspired styling with proper color coding
-
-## ✨ Key Features
-
-- **Distinct County Colors**: Each county has a unique pastel color for clear identification
-- **Smart Highway Labeling**: Labels align with highway direction, limited to major routes (Interstate/US)
-- **Professional Quality**: 300 DPI output suitable for large-format printing (24" × 24")
-- **Clean Visual Design**: Minimal clutter with strategic label placement
-- **Multiple Formats**: High-resolution PNG and vector PDF outputs
-- **Automatic File Management**: Replaces previous versions on each generation
+- **High-Quality Output**: 300 DPI suitable for large-format printing (24" × 24")
 
 ## 🚀 Quick Start
 
-1. **Navigate to project:**
 ```bash
-cd us_masjid_map
-```
+# Clone the repository
+git clone https://github.com/iHusain/socal-masjid-map.git
+cd socal-masjid-map
 
-2. **Activate virtual environment:**
-```bash
-source venv/bin/activate
-```
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-3. **Generate the map:**
-```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate the map
 python socal_map.py
 ```
 
-## 📊 Output Specifications
+## 📊 Output
 
-### Generated Files
-- **PNG**: `us_masjid_map_final.png` (~1.4 MB) - High-resolution raster
+The application generates:
+- **PNG**: `us_masjid_map_final.png` (~1.5 MB) - High-resolution raster
 - **PDF**: `us_masjid_map_final.pdf` (~0.4 MB) - Vector format for printing
 
-### Map Features
-- **Dimensions**: 24" × 24" at 300 DPI (7,200 × 7,200 pixels)
-- **Geographic Coverage**: Los Angeles, Orange, Riverside, San Bernardino counties
-- **Highway Network**: Complete road system with 12 major highway labels
-- **Visual Style**: Clean, professional design suitable for presentations and printing
+Files are saved to the `output/` directory.
 
-## 🎨 Design Elements
+## 🎨 Visual Elements
 
-### County Color Scheme
+### County Colors
 - **Los Angeles**: Light peach (#FFE5CC)
 - **Orange**: Soft coral (#FFD1DC)  
 - **Riverside**: Pale yellow (#FFF8DC)
 - **San Bernardino**: Light salmon (#FFA07A)
 
-### Highway Styling
-- **Color**: Orange (#FF6600) for visibility
-- **Width**: 2.0 for clear definition
-- **Labels**: Rotated text aligned with highway direction
-- **Coverage**: Interstate and US routes labeled
+### Highway System
+- **24 Unique Colors**: Each highway has distinct color for easy identification
+- **Professional Legend**: Shows highway names with matching color samples
+- **Complete Network**: 532 highway segments with major route labeling
+- **Aligned Labels**: Text rotated to match highway direction
 
-### Masjid Marker
-- **Symbol**: Green star (#228B22) with white border
-- **Size**: Large (400) for clear visibility
-- **Label**: "Orange County Masjid" with full address
-
-## 🛠️ Technical Implementation
+## 🛠️ Technical Specifications
 
 ### Data Sources
-- **Counties**: US Census TIGER/Line 2023 shapefiles (3,235 → filtered to 4)
-- **Highways**: US Census TIGER/Line Primary Roads 2023 (17,458 → filtered to 532 regional)
+- **Counties**: US Census TIGER/Line 2023 shapefiles
+- **Highways**: US Census TIGER/Line Primary Roads 2023
 - **Coordinate System**: WGS84 (EPSG:4326)
 
-### Processing Pipeline
-1. **Load**: TIGER/Line shapefiles for counties and highways
-2. **Filter**: Extract 4 target counties (California FIPS code 06)
-3. **Clip**: Highway segments to regional bounds
-4. **Render**: Counties (individual colors) → Highways (all segments) → Labels (selective)
-5. **Export**: PNG and PDF with white background
+### Requirements
+- Python 3.8+
+- Dependencies: geopandas, matplotlib, shapely, pandas, numpy
+- System: ~4GB RAM recommended for processing
 
-### Label Algorithm
-- **Highway Labels**: Rotated to match line direction using coordinate geometry
-- **Collision Avoidance**: Limits to 12 major highways to prevent overcrowding
-- **Smart Positioning**: Uses midpoint of highway segments for optimal placement
+## ⚙️ Configuration
 
-## 📁 Project Structure
-
-```
-us_masjid_map/
-├── socal_map.py           # Main generator (PRODUCTION)
-├── data/shapefiles/       # TIGER/Line data (✅ included)
-│   ├── tl_2023_us_county.*
-│   └── tl_2023_us_primaryroads.*
-├── output/                # Generated maps
-│   ├── us_masjid_map_final.png
-│   └── us_masjid_map_final.pdf
-├── src/                   # Original modular codebase
-├── tests/                 # Test suite (15 passing tests)
-├── venv/                  # Python virtual environment
-└── README.md             # This file
-```
-
-## ⚙️ Configuration Options
-
-### Easy Customization
+### Customize Masjid Location
 ```python
-# County selection
-TARGET_COUNTIES = ["Los Angeles", "Orange", "Riverside", "San Bernardino"]
-
-# Masjid location
 MASJID = {
-    "name": "Orange County Masjid",
+    "name": "Your Masjid Name",
     "latitude": 34.0633,
     "longitude": -117.6509,
-    "address": "1027 E Philadelphia St, Ontario, CA 91761"
+    "address": "Your Address"
 }
-
-# Output settings
-MAP_WIDTH_INCHES = 24    # Adjustable size
-DPI = 300               # Print quality
 ```
 
-### Color Customization
+### Modify Target Counties
 ```python
-COUNTY_COLORS = {
-    "Los Angeles": "#FFE5CC",
-    "Orange": "#FFD1DC", 
-    "Riverside": "#FFF8DC",
-    "San Bernardino": "#FFA07A"
-}
+TARGET_COUNTIES = ["Los Angeles", "Orange", "Riverside", "San Bernardino"]
 ```
 
-## 🧪 Development & Testing
+### Adjust Output Settings
+```python
+MAP_WIDTH_INCHES = 24    # Output width
+MAP_HEIGHT_INCHES = 24   # Output height  
+DPI = 300               # Print resolution
+```
+
+## 🧪 Development
 
 ### Run Tests
 ```bash
@@ -147,43 +101,33 @@ black socal_map.py      # Format code
 flake8 socal_map.py     # Lint code
 ```
 
-### Demo Version
-```bash
-python demo.py          # Mock data demo
+## 📁 Project Structure
+
 ```
-
-## 📈 Performance Metrics
-
-- **Processing Time**: ~30 seconds for complete map generation
-- **Memory Usage**: ~2GB during rendering
-- **File Sizes**: PNG 1.4MB, PDF 0.4MB
-- **Data Processing**: 532 highway segments, 4 counties, 1 masjid location
+socal-masjid-map/
+├── socal_map.py           # Main application
+├── data/shapefiles/       # TIGER/Line datasets (included)
+├── output/                # Generated maps
+├── assets/                # README images
+├── src/                   # Original modular codebase
+├── tests/                 # Test suite
+├── requirements.txt       # Dependencies
+└── README.md             # This file
+```
 
 ## 🎯 Use Cases
 
-- **Community Outreach**: Visual representation of masjid location relative to counties
+- **Community Outreach**: Visual representation of masjid location
 - **Educational Materials**: Geographic reference for Southern California
-- **Presentation Graphics**: High-quality maps for reports and presentations
-- **Print Materials**: Suitable for posters, banners, and handouts
+- **Presentation Graphics**: High-quality maps for reports
+- **Print Materials**: Suitable for posters and banners
 
-## 📋 Requirements
+## 📈 Performance
 
-- **Python 3.8+**
-- **Dependencies**: geopandas, matplotlib, shapely, pandas, numpy
-- **Data**: TIGER/Line shapefiles (included)
-- **System**: ~4GB RAM recommended for processing
-
-## 🔄 Version History
-
-- **v1.0**: Initial modular architecture with full US coverage
-- **v2.0**: Regional focus on Southern California counties
-- **v3.0**: Single masjid location with enhanced labeling
-- **v4.0**: Google Maps-inspired design with aligned highway labels
-- **v4.1**: Fixed county colors and continuous highway lines (CURRENT)
-
-## 📄 License
-
-MIT License - See LICENSE file for details.
+- **Processing Time**: ~30 seconds for complete generation
+- **Memory Usage**: ~2GB during rendering
+- **Output Quality**: 300 DPI print-ready
+- **File Sizes**: PNG 1.5MB, PDF 0.4MB
 
 ## 🤝 Contributing
 
@@ -193,9 +137,11 @@ MIT License - See LICENSE file for details.
 4. Commit: `git commit -m "feat: description"`
 5. Push and create pull request
 
-## 📞 Support
+## 📄 License
 
-For issues or questions:
-- Check existing issues in the repository
-- Create new issue with map output and error details
-- Include system information and Python version
+MIT License - See LICENSE file for details.
+
+## 🔗 Data Attribution
+
+- **US Counties & Highways**: US Census Bureau TIGER/Line Shapefiles 2023
+- **Masjid Location**: 1027 E Philadelphia St, Ontario, CA 91761
