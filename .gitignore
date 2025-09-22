@@ -35,14 +35,10 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project specific - keep generated maps out but include source data
 output/*.png
 output/*.pdf
 output/*.svg
-data/shapefiles/*.shp
-data/shapefiles/*.shx
-data/shapefiles/*.dbf
-data/shapefiles/*.prj
 
 # Testing
 .pytest_cache/
